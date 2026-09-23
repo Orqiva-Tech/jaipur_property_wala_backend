@@ -60,6 +60,7 @@ const createEnquiry = async (req, res, next) => {
       message: 'Enquiry submitted successfully! Our expert advisor will contact you within 15 minutes.',
       data: {
         id: enquiry._id,
+        _id: enquiry._id,
         name: enquiry.name
       }
     });
@@ -197,10 +198,41 @@ const exportEnquiriesCSV = async (req, res, next) => {
   }
 };
 
+// @desc    Delete a note from an enquiry
+// @route   DELETE /api/enquiries/:id/notes/:noteId
+// @access  Protected (Admin)
+const deleteEnquiryNote = async (req, res, next) => {
+  try {
+    const enquiry = await Enquiry.findById(req.params.id);
+    if (!enquiry) {
+      return res.status(404).json({
+        success: false,
+        message: 'Enquiry record not found'
+      });
+    }
+
+    const noteId = req.params.noteId;
+    enquiry.internalNotes = enquiry.internalNotes.filter(
+      (n, idx) => String(n._id) !== String(noteId) && String(idx) !== String(noteId)
+    );
+
+    await enquiry.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Note deleted successfully',
+      data: enquiry
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createEnquiry,
   getEnquiries,
   updateEnquiryStatus,
   deleteEnquiry,
+  deleteEnquiryNote,
   exportEnquiriesCSV
 };

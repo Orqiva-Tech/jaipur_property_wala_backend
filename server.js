@@ -47,9 +47,13 @@ app.use('/api/admin/properties', require('./routes/propertyRoutes'));
 app.use('/api/locations', require('./routes/locationRoutes'));
 app.use('/api/admin/locations', require('./routes/locationRoutes'));
 app.use('/api/enquiries', require('./routes/enquiryRoutes'));
+app.use('/api/admin/enquiries', require('./routes/enquiryRoutes'));
 app.use('/api/careers', require('./routes/careerRoutes'));
+app.use('/api/admin/careers', require('./routes/careerRoutes'));
 app.use('/api/gallery', require('./routes/galleryRoutes'));
+app.use('/api/admin/gallery', require('./routes/galleryRoutes'));
 app.use('/api/blogs', require('./routes/blogRoutes'));
+app.use('/api/admin/blogs', require('./routes/blogRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/settings', (req, res, next) => {
   const adminController = require('./controllers/adminController');

@@ -5,6 +5,7 @@ const {
   getEnquiries,
   updateEnquiryStatus,
   deleteEnquiry,
+  deleteEnquiryNote,
   exportEnquiriesCSV
 } = require('../controllers/enquiryController');
 const { protectAdmin } = require('../middleware/auth');
@@ -17,5 +18,6 @@ router.get('/', protectAdmin, getEnquiries);
 router.get('/export', protectAdmin, exportEnquiriesCSV);
 router.put('/:id', protectAdmin, updateEnquiryStatus);
 router.delete('/:id', protectAdmin, deleteEnquiry);
+router.delete('/:id/notes/:noteId', protectAdmin, deleteEnquiryNote);
 
 module.exports = router;

@@ -44,14 +44,16 @@ const resumeStorage = multer.diskStorage({
 });
 
 const mediaFilter = (req, file, cb) => {
-  const allowedExtensions = /jpeg|jpg|png|webp|svg|mp4|webm/;
-  const extname = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = /image\/(jpeg|jpg|png|webp|svg\+xml)|video\/(mp4|webm)/.test(file.mimetype);
+  const allowedExtensions = /jpeg|jpg|png|webp|svg|gif|avif|bmp|tiff|jfif|heic|mp4|webm|mkv|mov|avi|m4v/i;
+  const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
+  const extValid = allowedExtensions.test(ext);
+  const isMediaMime = file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/') || file.mimetype === 'application/octet-stream';
 
-  if (extname && mimetype) {
+  if (extValid || isMediaMime) {
     cb(null, true);
   } else {
-    cb(new Error('Only images (jpg, png, webp) and web video (mp4) are allowed!'));
+    // Lenient fallback to allow admin to upload any image or media
+    cb(null, true);
   }
 };
 
@@ -69,7 +71,10 @@ const resumeFilter = (req, file, cb) => {
 
 const uploadMedia = multer({
   storage: mediaStorage,
-  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100MB
+    files: 100 // Unlimited / high batch upload
+  },
   fileFilter: mediaFilter
 });
 

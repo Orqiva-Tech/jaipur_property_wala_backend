@@ -233,17 +233,78 @@ const sanitizePropertyData = (rawData, files = []) => {
   if (data.priceOnRequest !== undefined) {
     data.priceOnRequest = data.priceOnRequest === 'true' || data.priceOnRequest === true;
   }
+  if (data.showPrice !== undefined) {
+    data.showPrice = data.showPrice === 'true' || data.showPrice === true;
+  } else {
+    data.showPrice = data.price > 0 && !data.priceOnRequest;
+  }
+
+  // Sanitize Virtual Tour URL
+  if (data.virtualTourUrl !== undefined) {
+    data.virtualTourUrl = String(data.virtualTourUrl).trim();
+  }
+
+  // Parse imageHighlights
+  if (typeof data.imageHighlights === 'string') {
+    try {
+      data.imageHighlights = JSON.parse(data.imageHighlights);
+    } catch (e) {
+      data.imageHighlights = [];
+    }
+  }
+
+  // Parse nearbyLocations
+  if (typeof data.nearbyLocations === 'string') {
+    try {
+      data.nearbyLocations = JSON.parse(data.nearbyLocations);
+    } catch (e) {
+      data.nearbyLocations = [];
+    }
+  }
+
+  // Map Embed URL
+  if (data.mapEmbedUrl) {
+    data.location.mapEmbedUrl = String(data.mapEmbedUrl).trim();
+  }
+
+  // Brochure URL
+  if (data.brochureUrl !== undefined) {
+    data.brochureUrl = String(data.brochureUrl).trim();
+  }
+
+  // Handle existing images & newly uploaded files
+  let currentImages = [];
+  if (data.existingImages) {
+    if (typeof data.existingImages === 'string') {
+      try {
+        currentImages = JSON.parse(data.existingImages);
+      } catch (e) {
+        currentImages = data.existingImages.split(',').map(s => s.trim()).filter(Boolean);
+      }
+    } else if (Array.isArray(data.existingImages)) {
+      currentImages = data.existingImages;
+    }
+  } else if (data.images) {
+    if (Array.isArray(data.images)) {
+      currentImages = data.images;
+    } else if (typeof data.images === 'string') {
+      try {
+        currentImages = JSON.parse(data.images);
+      } catch (e) {
+        currentImages = [data.images];
+      }
+    }
+  }
 
   // Attach uploaded files if present
   if (files && files.length > 0) {
     const filePaths = files.map(file => `/uploads/properties/${file.filename}`);
-    data.images = data.images
-      ? (Array.isArray(data.images) ? [...data.images, ...filePaths] : [data.images, ...filePaths])
-      : filePaths;
+    currentImages = [...currentImages, ...filePaths];
   }
 
-  // If no images provided at all, give a high quality default
-  if (!data.images || data.images.length === 0) {
+  if (currentImages.length > 0) {
+    data.images = currentImages;
+  } else if (!data.images || data.images.length === 0) {
     data.images = ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80'];
   }
 
@@ -288,10 +349,12 @@ const updateProperty = async (req, res, next) => {
 
     const data = sanitizePropertyData(req.body, req.files);
 
-    // Keep existing images if no new ones replaced
+    // Keep existing images only if neither new files uploaded nor existingImages provided
     if (!req.files || req.files.length === 0) {
-      if (property.images && property.images.length > 0 && (!data.images || data.images.length === 0)) {
-        data.images = property.images;
+      if (req.body.existingImages === undefined && (!data.images || data.images.length === 0)) {
+        if (property.images && property.images.length > 0) {
+          data.images = property.images;
+        }
       }
     }
 

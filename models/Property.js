@@ -63,6 +63,25 @@ const PropertySchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  showPrice: {
+    type: Boolean,
+    default: true
+  },
+  virtualTourUrl: {
+    type: String,
+    default: ''
+  },
+  imageHighlights: [{
+    image: { type: String, default: '' },
+    title: { type: String, default: '' },
+    description: { type: String, default: '' }
+  }],
+  nearbyLocations: [{
+    name: { type: String, default: '' },
+    distance: { type: String, default: '' },
+    category: { type: String, default: 'Landmark' },
+    icon: { type: String, default: '📍' }
+  }],
   plotSizes: [{
     type: Number
   }],
