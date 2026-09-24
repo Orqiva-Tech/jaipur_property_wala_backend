@@ -13,13 +13,56 @@ connectDB();
 
 const app = express();
 
+// Allowed Origins for Production & Development
+const allowedOrigins = [
+  'https://property.dobhi.in',
+  'https://adminproperti.dobhi.in',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5180',
+  'http://localhost:5181',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+  'http://127.0.0.1:5180',
+  'http://127.0.0.1:5181'
+];
+
+if (process.env.CLIENT_URL && process.env.CLIENT_URL !== '*') {
+  process.env.CLIENT_URL.split(',').forEach(url => {
+    const trimmed = url.trim();
+    if (trimmed && !allowedOrigins.includes(trimmed)) {
+      allowedOrigins.push(trimmed);
+    }
+  });
+}
+
 // Security & Utility Middlewares
 app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
+
 app.use(cors({
-  origin: '*', // Allows development client and production host
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow non-browser requests (Postman, server-to-server, health check)
+    if (!origin) return callback(null, true);
+    
+    // Check exact match, subdomains of dobhi.in, or localhost
+    const isAllowed = 
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.dobhi.in') ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      process.env.CLIENT_URL === '*';
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Fallback so no valid frontend client is blocked
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));

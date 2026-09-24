@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+uploads/*
+!uploads/.gitkeep
+test_cloud_upload.txt
 
 # Editor directories and files
 .vscode/*

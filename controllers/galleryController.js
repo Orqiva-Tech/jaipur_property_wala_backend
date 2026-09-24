@@ -1,4 +1,9 @@
 const Gallery = require('../models/Gallery');
+const {
+  isCloudinaryConfigured,
+  uploadToCloudinary,
+  deleteFromCloudinary
+} = require('../config/cloudinary');
 
 // @desc    Get gallery items with optional category & location filter
 // @route   GET /api/gallery
@@ -36,11 +41,23 @@ const createGalleryItem = async (req, res, next) => {
     const data = { ...req.body };
 
     if (req.file) {
-      data.mediaUrl = `/uploads/gallery/${req.file.filename}`;
-      if (req.file.mimetype.startsWith('video')) {
-        data.mediaType = 'video';
+      const isVideo = req.file.mimetype && req.file.mimetype.startsWith('video');
+      data.mediaType = isVideo ? 'video' : 'image';
+
+      if (isCloudinaryConfigured()) {
+        try {
+          const cloudRes = await uploadToCloudinary(
+            req.file.path,
+            'jaipur_property_wala/gallery',
+            isVideo ? 'video' : 'image'
+          );
+          data.mediaUrl = cloudRes.url;
+        } catch (cloudErr) {
+          console.error('[Cloudinary gallery upload error, fallback to local]', cloudErr.message);
+          data.mediaUrl = `/uploads/gallery/${req.file.filename}`;
+        }
       } else {
-        data.mediaType = 'image';
+        data.mediaUrl = `/uploads/gallery/${req.file.filename}`;
       }
     }
 
@@ -76,6 +93,12 @@ const deleteGalleryItem = async (req, res, next) => {
     if (!item) {
       return res.status(404).json({ success: false, message: 'Gallery item not found' });
     }
+
+    if (item.mediaUrl && typeof item.mediaUrl === 'string' && item.mediaUrl.includes('res.cloudinary.com')) {
+      const resType = item.mediaType === 'video' ? 'video' : 'image';
+      deleteFromCloudinary(item.mediaUrl, resType).catch(() => {});
+    }
+
     await item.deleteOne();
     res.status(200).json({ success: true, message: 'Gallery item deleted' });
   } catch (error) {

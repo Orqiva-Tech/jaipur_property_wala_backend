@@ -1,4 +1,9 @@
 const Property = require('../models/Property');
+const {
+  isCloudinaryConfigured,
+  uploadToCloudinary,
+  deleteFromCloudinary
+} = require('../config/cloudinary');
 
 // @desc    Get all properties with filtering, search & pagination
 // @route   GET /api/properties
@@ -160,7 +165,7 @@ const getPropertyBySlug = async (req, res, next) => {
 };
 
 // Helper function to safely sanitize incoming property data
-const sanitizePropertyData = (rawData, files = []) => {
+const sanitizePropertyData = async (rawData, files = []) => {
   const data = { ...rawData };
 
   // Parse plotSizes
@@ -298,8 +303,26 @@ const sanitizePropertyData = (rawData, files = []) => {
 
   // Attach uploaded files if present
   if (files && files.length > 0) {
-    const filePaths = files.map(file => `/uploads/properties/${file.filename}`);
-    currentImages = [...currentImages, ...filePaths];
+    if (isCloudinaryConfigured()) {
+      const uploadPromises = files.map(file => {
+        const isVideo = file.mimetype && file.mimetype.startsWith('video');
+        return uploadToCloudinary(
+          file.path,
+          'jaipur_property_wala/properties',
+          isVideo ? 'video' : 'image'
+        )
+          .then(res => res.url)
+          .catch(err => {
+            console.error('[Cloudinary direct upload error]', err.message);
+            return `/uploads/properties/${file.filename}`;
+          });
+      });
+      const cloudUrls = await Promise.all(uploadPromises);
+      currentImages = [...currentImages, ...cloudUrls];
+    } else {
+      const filePaths = files.map(file => `/uploads/properties/${file.filename}`);
+      currentImages = [...currentImages, ...filePaths];
+    }
   }
 
   if (currentImages.length > 0) {
@@ -316,7 +339,7 @@ const sanitizePropertyData = (rawData, files = []) => {
 // @access  Protected (Admin)
 const createProperty = async (req, res, next) => {
   try {
-    const data = sanitizePropertyData(req.body, req.files);
+    const data = await sanitizePropertyData(req.body, req.files);
     const property = await Property.create(data);
 
     res.status(201).json({
@@ -347,7 +370,7 @@ const updateProperty = async (req, res, next) => {
       });
     }
 
-    const data = sanitizePropertyData(req.body, req.files);
+    const data = await sanitizePropertyData(req.body, req.files);
 
     // Keep existing images only if neither new files uploaded nor existingImages provided
     if (!req.files || req.files.length === 0) {
@@ -389,6 +412,22 @@ const deleteProperty = async (req, res, next) => {
         success: false,
         message: 'Property not found'
       });
+    }
+
+    // Safely delete Cloudinary images in background
+    if (property.images && Array.isArray(property.images)) {
+      for (const img of property.images) {
+        if (img && typeof img === 'string' && img.includes('res.cloudinary.com')) {
+          deleteFromCloudinary(img).catch(() => {});
+        }
+      }
+    }
+    if (property.imageHighlights && Array.isArray(property.imageHighlights)) {
+      for (const hl of property.imageHighlights) {
+        if (hl && hl.image && typeof hl.image === 'string' && hl.image.includes('res.cloudinary.com')) {
+          deleteFromCloudinary(hl.image).catch(() => {});
+        }
+      }
     }
 
     await property.deleteOne();
