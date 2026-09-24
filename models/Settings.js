@@ -5,6 +5,10 @@ const SettingsSchema = new mongoose.Schema({
     type: String,
     default: 'JAIPUR PROPERTY WALA'
   },
+  logoUrl: {
+    type: String,
+    default: 'https://res.cloudinary.com/ripzq8zx/image/upload/v1790232795/jaipur_property_wala/brand/temp_logo_qhl20u.jpg'
+  },
   tagline: {
     type: String,
     default: 'Premier JDA Approved Residential & Commercial Plots in Jaipur'
