@@ -33,9 +33,9 @@ const seedDatabase = async () => {
     await Settings.create({
       companyName: 'JAIPUR PROPERTY WALA',
       tagline: 'Premier JDA & RERA Approved Residential & Commercial Plots across Jaipur, Ajmer, Kishangarh & Mumbai',
-      phone: '9828226566',
-      alternatePhone: '+91 98282 26566',
-      whatsapp: '919828226566',
+      phone: '9251217568',
+      alternatePhone: '+91 92512 17568',
+      whatsapp: '919251217568',
       email: 'info@jaipurpropertywala.in',
       address: 'Livasha Flat No.301, Mahal Yojna, Mahal Road Scheme, Jagatpura, Jaipur - 302017, Rajasthan',
       officeTimings: 'Monday - Sunday: 9:00 AM - 8:00 PM',

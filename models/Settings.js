@@ -15,15 +15,15 @@ const SettingsSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    default: '9828226566'
+    default: '9251217568'
   },
   alternatePhone: {
     type: String,
-    default: '+91 98282 26566'
+    default: '+91 92512 17568'
   },
   whatsapp: {
     type: String,
-    default: '919828226566'
+    default: '919251217568'
   },
   email: {
     type: String,

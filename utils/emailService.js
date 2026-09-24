@@ -204,8 +204,8 @@ const sendCustomerEnquiryConfirmation = async (enquiry) => {
               </p>
 
               <div style="text-align: center; margin: 25px 0;">
-                <a href="tel:+919828226566" class="btn">
-                  📞 Call Us: +91 98282 26566
+                <a href="tel:+919251217568" class="btn">
+                  📞 Call Us: +91 92512 17568
                 </a>
               </div>
 
@@ -217,7 +217,7 @@ const sendCustomerEnquiryConfirmation = async (enquiry) => {
 
             <div class="footer">
               <strong>Jaipur Property Wala Head Office:</strong> Plot No. 42, Jagatpura, Near Mahal Road, Jaipur, Rajasthan 302017<br/>
-              Helpline: +91 98282 26566 | Email: ankityadav941318@gmail.com | Website: jaipurpropertywala.in
+              Helpline: +91 92512 17568 | Email: ankityadav941318@gmail.com | Website: jaipurpropertywala.in
             </div>
           </div>
         </body>
