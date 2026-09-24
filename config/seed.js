@@ -33,7 +33,7 @@ const seedDatabase = async () => {
     await Settings.create({
       companyName: 'JAIPUR PROPERTY WALA',
       tagline: 'Premier JDA & RERA Approved Residential & Commercial Plots across Jaipur, Ajmer, Kishangarh & Mumbai',
-      phone: '09828226566',
+      phone: '9828226566',
       alternatePhone: '+91 98282 26566',
       whatsapp: '919828226566',
       email: 'info@jaipurpropertywala.in',

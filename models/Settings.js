@@ -15,7 +15,7 @@ const SettingsSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    default: '09828226566'
+    default: '9828226566'
   },
   alternatePhone: {
     type: String,
