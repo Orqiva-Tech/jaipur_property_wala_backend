@@ -113,6 +113,28 @@ const getEnquiries = async (req, res, next) => {
   }
 };
 
+// @desc    Get single enquiry by ID
+// @route   GET /api/admin/enquiries/:id
+// @access  Protected (Admin)
+const getEnquiryById = async (req, res, next) => {
+  try {
+    const enquiry = await Enquiry.findById(req.params.id).populate('propertyId');
+    if (!enquiry) {
+      return res.status(404).json({
+        success: false,
+        message: 'Enquiry record not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: enquiry
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Update enquiry status & add internal notes
 // @route   PUT /api/admin/enquiries/:id
 // @access  Protected (Admin)
@@ -231,6 +253,7 @@ const deleteEnquiryNote = async (req, res, next) => {
 module.exports = {
   createEnquiry,
   getEnquiries,
+  getEnquiryById,
   updateEnquiryStatus,
   deleteEnquiry,
   deleteEnquiryNote,
