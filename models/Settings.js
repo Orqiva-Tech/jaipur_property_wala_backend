@@ -43,8 +43,8 @@ const SettingsSchema = new mongoose.Schema({
   },
   stats: {
     yearsExperience: { type: String, default: '20+' },
-    satisfiedClients: { type: String, default: '4500+' },
-    jdaPlotsSold: { type: String, default: '3200+' },
+    satisfiedClients: { type: String, default: '4,500+' },
+    jdaPlotsSold: { type: String, default: '3,200+' },
     bankLoanApproval: { type: String, default: '80% All Banks' }
   },
   socialLinks: {
