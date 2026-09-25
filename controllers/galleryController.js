@@ -68,8 +68,27 @@ const createGalleryItem = async (req, res, next) => {
       });
     }
 
-    if (!data.thumbnailUrl && data.mediaUrl && data.mediaType === 'image') {
-      data.thumbnailUrl = data.mediaUrl;
+    // Auto-detect YouTube URL
+    if (data.mediaUrl && typeof data.mediaUrl === 'string') {
+      const ytMatch = data.mediaUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      if (ytMatch) {
+        data.mediaType = 'video';
+        if (!data.thumbnailUrl) {
+          data.thumbnailUrl = `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+        }
+      }
+    }
+
+    if (!data.thumbnailUrl && data.mediaUrl) {
+      if (data.mediaType === 'image') {
+        data.thumbnailUrl = data.mediaUrl;
+      } else if (data.mediaType === 'video') {
+        if (data.mediaUrl.includes('res.cloudinary.com')) {
+          data.thumbnailUrl = data.mediaUrl.replace(/\.(mp4|mov|webm|mkv|m4v)$/i, '.jpg');
+        } else {
+          data.thumbnailUrl = 'https://res.cloudinary.com/ripzq8zx/image/upload/v1790233295/jaipur_property_wala/gallery/srttotuajh6zdgxx91yz.jpg';
+        }
+      }
     }
 
     if (!data.location) {
