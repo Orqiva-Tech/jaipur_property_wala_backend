@@ -40,7 +40,7 @@ const CareerSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'Job description is required']
+    default: 'Career opening at Jaipur Property Wala'
   },
   responsibilities: [{
     type: String

@@ -119,6 +119,10 @@ const createCareer = async (req, res, next) => {
         data.qualifications = data.qualifications.split('\n').map(s => s.trim()).filter(Boolean);
       }
     }
+    if (!data.description || !data.description.trim()) {
+      const respSummary = Array.isArray(data.responsibilities) && data.responsibilities.length ? ` Key responsibilities include: ${data.responsibilities.join(', ')}.` : '';
+      data.description = (data.title ? `${data.title} role at Jaipur Property Wala.` : 'Career opening at Jaipur Property Wala.') + respSummary;
+    }
 
     const career = await Career.create(data);
     res.status(201).json({
