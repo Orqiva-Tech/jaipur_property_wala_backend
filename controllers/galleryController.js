@@ -68,6 +68,10 @@ const createGalleryItem = async (req, res, next) => {
       });
     }
 
+    if (!data.thumbnailUrl && data.mediaUrl && data.mediaType === 'image') {
+      data.thumbnailUrl = data.mediaUrl;
+    }
+
     if (!data.location) {
       data.location = 'Jaipur';
     }

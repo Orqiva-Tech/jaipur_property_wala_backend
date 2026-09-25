@@ -19,6 +19,11 @@ const errorHandler = (err, req, res, next) => {
     message = Object.values(err.errors).map(val => val.message).join(', ');
   }
 
+  if (err.name === 'MulterError') {
+    statusCode = 400;
+    message = `Upload error: ${err.message}${err.field ? ` (${err.field})` : ''}`;
+  }
+
   res.status(statusCode).json({
     success: false,
     message,
