@@ -44,20 +44,19 @@ const createGalleryItem = async (req, res, next) => {
       const isVideo = req.file.mimetype && req.file.mimetype.startsWith('video');
       data.mediaType = isVideo ? 'video' : 'image';
 
-      if (isCloudinaryConfigured()) {
-        try {
-          const cloudRes = await uploadToCloudinary(
-            req.file.path,
-            'jaipur_property_wala/gallery',
-            isVideo ? 'video' : 'image'
-          );
-          data.mediaUrl = cloudRes.url;
-        } catch (cloudErr) {
-          console.error('[Cloudinary gallery upload error, fallback to local]', cloudErr.message);
-          data.mediaUrl = `/uploads/gallery/${req.file.filename}`;
-        }
-      } else {
-        data.mediaUrl = `/uploads/gallery/${req.file.filename}`;
+      try {
+        const cloudRes = await uploadToCloudinary(
+          req.file.path,
+          'jaipur_property_wala/gallery',
+          isVideo ? 'video' : 'image'
+        );
+        data.mediaUrl = cloudRes.url;
+      } catch (cloudErr) {
+        console.error('[Cloudinary gallery upload error]', cloudErr);
+        return res.status(500).json({
+          success: false,
+          message: `Cloudinary upload failed: ${cloudErr.message}`
+        });
       }
     }
 
