@@ -206,6 +206,18 @@ const sanitizePropertyData = async (rawData, files = []) => {
     data.location.area = data.title || 'Jaipur Prime';
   }
 
+  // Sanitize Category & Type
+  if (!data.category || String(data.category).trim() === '') {
+    data.category = 'Residential';
+  } else {
+    data.category = String(data.category).trim();
+  }
+  if (!data.type || String(data.type).trim() === '') {
+    data.type = 'Plot';
+  } else {
+    data.type = String(data.type).trim();
+  }
+
   // Sanitize numeric fields - completely optional
   if (data.price !== undefined && data.price !== '' && data.price !== null) {
     data.price = Number(data.price) || 0;

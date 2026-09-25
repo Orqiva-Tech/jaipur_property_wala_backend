@@ -22,13 +22,13 @@ const PropertySchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['Residential', 'Commercial', 'Industrial', 'Agricultural', 'Mixed-Use'],
-    default: 'Residential'
+    default: 'Residential',
+    trim: true
   },
   type: {
     type: String,
-    enum: ['Plot', 'Villa', 'Apartment', 'Farmhouse', 'Commercial Plot', 'Shop'],
-    default: 'Plot'
+    default: 'Plot',
+    trim: true
   },
   location: {
     area: {
