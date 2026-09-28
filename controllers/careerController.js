@@ -1,5 +1,6 @@
 const Career = require('../models/Career');
 const JobApplication = require('../models/JobApplication');
+const { sendAdminJobNotification } = require('../utils/emailService');
 const path = require('path');
 const fs = require('fs');
 
@@ -72,6 +73,11 @@ const createJobApplication = async (req, res, next) => {
       coverLetter: coverLetter || '',
       resumePath: `/uploads/resumes/${req.file.filename}`,
       resumeOriginalName: req.file.originalname
+    });
+
+    // Send admin notification asynchronously
+    sendAdminJobNotification(application).catch(err => {
+      console.error('[Email Error] Failed dispatching job application email to admin:', err);
     });
 
     res.status(201).json({

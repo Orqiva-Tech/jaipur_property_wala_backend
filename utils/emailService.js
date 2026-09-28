@@ -1,15 +1,20 @@
 const nodemailer = require('nodemailer');
 
-// Initialize Gmail SMTP Transporter
+// Initialize Gmail SMTP Transporter with SSL
 const createTransporter = () => {
   const user = process.env.SMTP_USER || 'ankityadav941318@gmail.com';
   const pass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : 'dzwcjmthmtxwniwq';
 
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
       user,
       pass
+    },
+    tls: {
+      rejectUnauthorized: false
     }
   });
 };
@@ -20,17 +25,20 @@ const createTransporter = () => {
 const sendAdminEnquiryNotification = async (enquiry) => {
   try {
     const transporter = createTransporter();
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'ankityadav941318@gmail.com';
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_USER || 'ankityadav941318@gmail.com';
     const dateFormatted = new Date().toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
       dateStyle: 'full',
       timeStyle: 'medium'
     });
 
+    const cleanPhone = (enquiry.phone || '').replace(/[^0-9]/g, '');
+    const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+
     const mailOptions = {
-      from: `"Jaipur Property Wala Leads" <${process.env.SMTP_USER || 'ankityadav941318@gmail.com'}>`,
+      from: `"Jaipur Property Wala" <${process.env.SMTP_USER || 'ankityadav941318@gmail.com'}>`,
       to: adminEmail,
-      subject: `🚨 [Nayi Property Lead] ${enquiry.name} — ${enquiry.interestedProperty || 'General Plot Inquiry'}`,
+      subject: `🔔 [You have a new query] ${enquiry.name} — ${enquiry.interestedProperty || 'General Property Inquiry'}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -54,10 +62,10 @@ const sendAdminEnquiryNotification = async (enquiry) => {
           <div class="card">
             <div class="header">
               <h1>JAIPUR PROPERTY WALA</h1>
-              <p>⚡ Nayi Customer Enquiry Alert (Real-Time)</p>
+              <p>⚡ You Have A New Query (Real-Time Notification)</p>
             </div>
             <div class="body">
-              <p style="font-size: 15px; margin-top: 0;"><strong>Ankit ji, website par nayi customer enquiry aayi hai:</strong></p>
+              <p style="font-size: 15px; margin-top: 0;"><strong>Ankit ji, website par nayi customer query aayi hai:</strong></p>
               
               <div style="background: #f7faf8; border-radius: 10px; padding: 14px; border-left: 4px solid #d4af37; margin-bottom: 16px;">
                 <div class="field-row">
@@ -71,7 +79,7 @@ const sendAdminEnquiryNotification = async (enquiry) => {
                       📞 ${enquiry.phone}
                     </a>
                     &nbsp;&nbsp;
-                    <a href="https://wa.me/91${enquiry.phone.replace(/[^0-9]/g, '').slice(-10)}" target="_blank" style="color: #25D366; font-weight: bold; text-decoration: none;">
+                    <a href="https://wa.me/${waPhone}" target="_blank" style="color: #25D366; font-weight: bold; text-decoration: none;">
                       💬 WhatsApp
                     </a>
                   </div>
@@ -82,15 +90,19 @@ const sendAdminEnquiryNotification = async (enquiry) => {
                 </div>
                 <div class="field-row">
                   <div class="label">Interested Scheme:</div>
-                  <div class="value"><strong style="color: #b8860b;">${enquiry.interestedProperty || 'General Plots Consultation'}</strong></div>
+                  <div class="value"><strong style="color: #b8860b;">${enquiry.interestedProperty || 'General Property Consultation'}</strong></div>
                 </div>
                 <div class="field-row">
                   <div class="label">Preferred City/Area:</div>
-                  <div class="value">${enquiry.preferredLocation || 'Jaipur / Multi-City'}</div>
+                  <div class="value">${enquiry.preferredLocation || 'Jaipur'}</div>
                 </div>
                 <div class="field-row">
                   <div class="label">Budget Range:</div>
                   <div class="value"><strong>${enquiry.budget || 'Any'}</strong></div>
+                </div>
+                <div class="field-row">
+                  <div class="label">Query Source:</div>
+                  <div class="value"><span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${enquiry.source || 'Website'}</span></div>
                 </div>
                 <div class="field-row">
                   <div class="label">Customer Message:</div>
@@ -122,6 +134,118 @@ const sendAdminEnquiryNotification = async (enquiry) => {
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('[EmailService] Error sending admin notification email:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Send notification email to Admin for new job / career applications
+ */
+const sendAdminJobNotification = async (application) => {
+  try {
+    const transporter = createTransporter();
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_USER || 'ankityadav941318@gmail.com';
+    const dateFormatted = new Date().toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      dateStyle: 'full',
+      timeStyle: 'medium'
+    });
+
+    const cleanPhone = (application.phone || '').replace(/[^0-9]/g, '');
+    const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+
+    const mailOptions = {
+      from: `"Jaipur Property Wala Careers" <${process.env.SMTP_USER || 'ankityadav941318@gmail.com'}>`,
+      to: adminEmail,
+      subject: `💼 [New Career Application] ${application.fullName} — ${application.jobTitle}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b1712; margin: 0; padding: 20px; }
+            .card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 2px solid #2563eb; }
+            .header { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); color: #ffffff; padding: 24px; text-align: center; border-bottom: 3px solid #60a5fa; }
+            .header h1 { margin: 0; font-size: 20px; color: #93c5fd; text-transform: uppercase; letter-spacing: 1.5px; }
+            .header p { margin: 6px 0 0; font-size: 13px; color: #cbd5e1; }
+            .body { padding: 24px; color: #222; }
+            .field-row { display: flex; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+            .label { width: 140px; font-weight: bold; font-size: 13px; color: #1e3a8a; }
+            .value { flex: 1; font-size: 14px; color: #333; }
+            .footer { background: #f8fafc; padding: 16px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #eee; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="header">
+              <h1>JAIPUR PROPERTY WALA RECRUITMENT</h1>
+              <p>💼 New Candidate Job Application</p>
+            </div>
+            <div class="body">
+              <p style="font-size: 15px; margin-top: 0;"><strong>Naya job candidate form submit hua hai:</strong></p>
+              
+              <div style="background: #f8fafc; border-radius: 10px; padding: 14px; border-left: 4px solid #2563eb; margin-bottom: 16px;">
+                <div class="field-row">
+                  <div class="label">Candidate Name:</div>
+                  <div class="value"><strong>${application.fullName}</strong></div>
+                </div>
+                <div class="field-row">
+                  <div class="label">Applied Position:</div>
+                  <div class="value"><strong style="color: #2563eb;">${application.jobTitle}</strong></div>
+                </div>
+                <div class="field-row">
+                  <div class="label">Contact Phone:</div>
+                  <div class="value">
+                    <a href="tel:${application.phone}" style="color: #0f172a; font-weight: bold; text-decoration: none; font-size: 15px;">
+                      📞 ${application.phone}
+                    </a>
+                    &nbsp;&nbsp;
+                    <a href="https://wa.me/${waPhone}" target="_blank" style="color: #25D366; font-weight: bold; text-decoration: none;">
+                      💬 WhatsApp
+                    </a>
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="label">Email Address:</div>
+                  <div class="value"><a href="mailto:${application.email}">${application.email}</a></div>
+                </div>
+                <div class="field-row">
+                  <div class="label">Location:</div>
+                  <div class="value">${application.currentLocation || 'Jaipur'}</div>
+                </div>
+                <div class="field-row">
+                  <div class="label">Experience:</div>
+                  <div class="value"><strong>${application.experienceYears || 'Fresher'}</strong></div>
+                </div>
+                <div class="field-row">
+                  <div class="label">Resume:</div>
+                  <div class="value"><strong>${application.resumeOriginalName || 'Attached in Portal'}</strong></div>
+                </div>
+                <div class="field-row">
+                  <div class="label">Cover Letter / Note:</div>
+                  <div class="value" style="font-style: italic;">"${application.coverLetter || 'No cover letter provided.'}"</div>
+                </div>
+                <div class="field-row" style="border-bottom: none;">
+                  <div class="label">Submitted Date:</div>
+                  <div class="value">${dateFormatted}</div>
+                </div>
+              </div>
+            </div>
+            <div class="footer">
+              Jaipur Property Wala Recruitment Portal • Automated Dispatch
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[EmailService] Admin job application notification sent: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('[EmailService] Error sending job application email:', error.message);
     return { success: false, error: error.message };
   }
 };
@@ -236,5 +360,6 @@ const sendCustomerEnquiryConfirmation = async (enquiry) => {
 
 module.exports = {
   sendAdminEnquiryNotification,
+  sendAdminJobNotification,
   sendCustomerEnquiryConfirmation
 };

@@ -6,7 +6,7 @@ const { sendAdminEnquiryNotification, sendCustomerEnquiryConfirmation } = requir
 // @access  Public
 const createEnquiry = async (req, res, next) => {
   try {
-    const { name, phone, email, interestedProperty, preferredLocation, budget, message, source } = req.body;
+    const { name, phone, email, interestedProperty, propertyId, preferredLocation, budget, message, source } = req.body;
 
     if (!name || !phone) {
       return res.status(400).json({
@@ -15,17 +15,23 @@ const createEnquiry = async (req, res, next) => {
       });
     }
 
-    // Basic anti-spam: check if same phone submitted in last 2 minutes
-    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-    const existingRecent = await Enquiry.findOne({
+    // Anti-double-click guard: only block duplicate clicks on identical phone & property within 5 seconds
+    const fiveSecondsAgo = new Date(Date.now() - 5 * 1000);
+    const existingDuplicate = await Enquiry.findOne({
       phone,
-      createdAt: { $gte: twoMinutesAgo }
+      interestedProperty: interestedProperty || 'General Consultation',
+      createdAt: { $gte: fiveSecondsAgo }
     });
 
-    if (existingRecent) {
+    if (existingDuplicate) {
       return res.status(200).json({
         success: true,
-        message: 'Thank you! We have already received your enquiry. Our Jaipur real estate advisor will call you shortly.'
+        message: 'Thank you! We have already received your enquiry. Our Jaipur real estate advisor will call you shortly.',
+        data: {
+          id: existingDuplicate._id,
+          _id: existingDuplicate._id,
+          name: existingDuplicate.name
+        }
       });
     }
 
@@ -34,6 +40,7 @@ const createEnquiry = async (req, res, next) => {
       phone,
       email: email || '',
       interestedProperty: interestedProperty || 'General Consultation',
+      propertyId: propertyId || undefined,
       preferredLocation: preferredLocation || 'Jaipur',
       budget: budget || 'Any',
       message: message || '',
@@ -49,6 +56,8 @@ const createEnquiry = async (req, res, next) => {
       results.forEach((r, idx) => {
         if (r.status === 'rejected') {
           console.error(`[Email Error] Failed dispatching email ${idx === 0 ? 'Admin' : 'Customer'}:`, r.reason);
+        } else if (r.status === 'fulfilled' && r.value && !r.value.success) {
+          console.error(`[Email Warning] ${idx === 0 ? 'Admin' : 'Customer'} email returned failure:`, r.value.error || r.value.message);
         }
       });
     }).catch(err => {
