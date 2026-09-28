@@ -75,10 +75,15 @@ const createJobApplication = async (req, res, next) => {
       resumeOriginalName: req.file.originalname
     });
 
-    // Send admin notification asynchronously
-    sendAdminJobNotification(application).catch(err => {
-      console.error('[Email Error] Failed dispatching job application email to admin:', err);
-    });
+    // Await sending admin notification
+    try {
+      const emailRes = await sendAdminJobNotification(application);
+      if (!emailRes.success) {
+        console.error('[Email Warning] Admin job application email failed:', emailRes.error);
+      }
+    } catch (emailErr) {
+      console.error('[Email Error] Exception sending admin job application email:', emailErr.message);
+    }
 
     res.status(201).json({
       success: true,

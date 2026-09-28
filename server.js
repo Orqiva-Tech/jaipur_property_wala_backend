@@ -84,6 +84,41 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Diagnostic Email Test Route
+app.get('/api/test-email', async (req, res) => {
+  try {
+    const { sendAdminEnquiryNotification, getSmtpCredentials } = require('./utils/emailService');
+    const creds = getSmtpCredentials ? getSmtpCredentials() : {};
+    const testResult = await sendAdminEnquiryNotification({
+      name: 'Diagnostic Verification',
+      phone: '+919251217568',
+      email: 'admin@jaipurpropertywala.in',
+      interestedProperty: 'Render Live Email Diagnostic Test',
+      preferredLocation: 'Jaipur',
+      budget: 'Any',
+      message: 'Direct live test verifying that Render successfully dispatches email notifications to admin.',
+      source: 'Render Live Diagnostic'
+    });
+    res.json({
+      success: true,
+      message: 'Diagnostic email test completed',
+      emailResult: testResult,
+      resolvedConfig: {
+        user: creds.user,
+        adminRecipient: creds.adminEmail,
+        passConfigured: !!creds.pass,
+        passLength: creds.pass ? creds.pass.length : 0
+      }
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message,
+      stack: err.stack
+    });
+  }
+});
+
 // Mount Routes
 app.use('/api/properties', require('./routes/propertyRoutes'));
 app.use('/api/admin/properties', require('./routes/propertyRoutes'));

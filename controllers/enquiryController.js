@@ -48,21 +48,22 @@ const createEnquiry = async (req, res, next) => {
       ipAddress: req.ip || req.headers['x-forwarded-for']
     });
 
-    // Asynchronously dispatch emails without delaying response to client
-    Promise.allSettled([
-      sendAdminEnquiryNotification(enquiry),
-      sendCustomerEnquiryConfirmation(enquiry)
-    ]).then(results => {
-      results.forEach((r, idx) => {
-        if (r.status === 'rejected') {
-          console.error(`[Email Error] Failed dispatching email ${idx === 0 ? 'Admin' : 'Customer'}:`, r.reason);
-        } else if (r.status === 'fulfilled' && r.value && !r.value.success) {
-          console.error(`[Email Warning] ${idx === 0 ? 'Admin' : 'Customer'} email returned failure:`, r.value.error || r.value.message);
-        }
+    // Dispatch admin notification directly and await transmission to ensure delivery on cloud containers
+    try {
+      const emailRes = await sendAdminEnquiryNotification(enquiry);
+      if (!emailRes.success) {
+        console.error('[Email Warning] Admin notification could not be delivered:', emailRes.error);
+      }
+    } catch (emailErr) {
+      console.error('[Email Error] Exception while sending admin enquiry email:', emailErr.message);
+    }
+
+    // Customer confirmation can be sent in background
+    if (enquiry.email) {
+      sendCustomerEnquiryConfirmation(enquiry).catch(err => {
+        console.error('[Email Warning] Customer confirmation email failed:', err.message);
       });
-    }).catch(err => {
-      console.error('[Email Error] Unexpected exception in email dispatch:', err);
-    });
+    }
 
     res.status(201).json({
       success: true,

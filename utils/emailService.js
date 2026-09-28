@@ -1,9 +1,29 @@
 const nodemailer = require('nodemailer');
 
+// Helper to resolve validated SMTP credentials with safe fallbacks
+const getSmtpCredentials = () => {
+  let user = process.env.SMTP_USER;
+  if (!user || user.includes('your_email') || !user.includes('@')) {
+    user = 'ankityadav941318@gmail.com';
+  }
+
+  let rawPass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '';
+  let pass = rawPass;
+  if (!pass || pass.includes('your_app_password') || pass.length < 8) {
+    pass = 'dzwcjmthmtxwniwq';
+  }
+
+  let adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (!adminEmail || adminEmail.includes('your_email') || !adminEmail.includes('@') || adminEmail.includes('example.com')) {
+    adminEmail = 'ankityadav941318@gmail.com';
+  }
+
+  return { user, pass, adminEmail };
+};
+
 // Initialize Gmail SMTP Transporter with SSL
 const createTransporter = () => {
-  const user = process.env.SMTP_USER || 'ankityadav941318@gmail.com';
-  const pass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : 'dzwcjmthmtxwniwq';
+  const { user, pass } = getSmtpCredentials();
 
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
@@ -25,7 +45,7 @@ const createTransporter = () => {
 const sendAdminEnquiryNotification = async (enquiry) => {
   try {
     const transporter = createTransporter();
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_USER || 'ankityadav941318@gmail.com';
+    const { user, adminEmail } = getSmtpCredentials();
     const dateFormatted = new Date().toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
       dateStyle: 'full',
@@ -36,7 +56,7 @@ const sendAdminEnquiryNotification = async (enquiry) => {
     const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
 
     const mailOptions = {
-      from: `"Jaipur Property Wala" <${process.env.SMTP_USER || 'ankityadav941318@gmail.com'}>`,
+      from: `"Jaipur Property Wala" <${user}>`,
       to: adminEmail,
       subject: `🔔 [You have a new query] ${enquiry.name} — ${enquiry.interestedProperty || 'General Property Inquiry'}`,
       html: `
@@ -144,7 +164,7 @@ const sendAdminEnquiryNotification = async (enquiry) => {
 const sendAdminJobNotification = async (application) => {
   try {
     const transporter = createTransporter();
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_USER || 'ankityadav941318@gmail.com';
+    const { user, adminEmail } = getSmtpCredentials();
     const dateFormatted = new Date().toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
       dateStyle: 'full',
@@ -155,7 +175,7 @@ const sendAdminJobNotification = async (application) => {
     const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
 
     const mailOptions = {
-      from: `"Jaipur Property Wala Careers" <${process.env.SMTP_USER || 'ankityadav941318@gmail.com'}>`,
+      from: `"Jaipur Property Wala Careers" <${user}>`,
       to: adminEmail,
       subject: `💼 [New Career Application] ${application.fullName} — ${application.jobTitle}`,
       html: `
@@ -361,5 +381,6 @@ const sendCustomerEnquiryConfirmation = async (enquiry) => {
 module.exports = {
   sendAdminEnquiryNotification,
   sendAdminJobNotification,
-  sendCustomerEnquiryConfirmation
+  sendCustomerEnquiryConfirmation,
+  getSmtpCredentials
 };
