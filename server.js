@@ -15,6 +15,10 @@ const app = express();
 
 // Allowed Origins for Production & Development
 const allowedOrigins = [
+  'https://jaipurpropertywala.in',
+  'https://www.jaipurpropertywala.in',
+  'https://admin.jaipurpropertywala.in',
+  'https://api.jaipurpropertywala.in',
   'https://property.dobhi.in',
   'https://adminproperti.dobhi.in',
   'http://localhost:5173',
@@ -46,9 +50,11 @@ app.use(cors({
     // Allow non-browser requests (Postman, server-to-server, health check)
     if (!origin) return callback(null, true);
     
-    // Check exact match, subdomains of dobhi.in, or localhost
+    // Check exact match, subdomains of jaipurpropertywala.in, dobhi.in, or localhost
     const isAllowed = 
       allowedOrigins.includes(origin) ||
+      origin.endsWith('.jaipurpropertywala.in') ||
+      origin === 'https://jaipurpropertywala.in' ||
       origin.endsWith('.dobhi.in') ||
       origin.includes('localhost') ||
       origin.includes('127.0.0.1') ||
