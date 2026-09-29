@@ -51,12 +51,17 @@ const uploadToCloudinary = async (filePath, folder = 'jaipur_property_wala/prope
       throw new Error(`Local file not found for upload: ${filePath}`);
     }
 
-    const result = await cloudinary.uploader.upload(filePath, {
+    const isVideo = resourceType === 'video';
+    const uploadFn = isVideo ? cloudinary.uploader.upload_large : cloudinary.uploader.upload;
+
+    const result = await uploadFn(filePath, {
       folder,
       resource_type: resourceType,
       use_filename: true,
       unique_filename: true,
-      overwrite: false
+      overwrite: false,
+      timeout: 600000,
+      chunk_size: 6000000
     });
 
     // Clean up local temp file after successful Cloudinary upload
