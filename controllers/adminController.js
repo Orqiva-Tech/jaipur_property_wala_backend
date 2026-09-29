@@ -158,9 +158,67 @@ const updateSettings = async (req, res, next) => {
   }
 };
 
+// @desc    Change admin password
+// @route   PUT /api/admin/auth/change-password
+// @access  Protected (Admin)
+const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, oldPassword, newPassword, confirmPassword } = req.body;
+    const oldPass = currentPassword || oldPassword;
+
+    if (!oldPass || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide both current password and new password.'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long.'
+      });
+    }
+
+    if (confirmPassword && newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password and confirm password do not match.'
+      });
+    }
+
+    const admin = await Admin.findById(req.admin._id);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: 'Admin account not found.'
+      });
+    }
+
+    const isMatch = await admin.matchPassword(oldPass);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect.'
+      });
+    }
+
+    admin.password = newPassword;
+    await admin.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password changed successfully.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   adminLogin,
   getAdminProfile,
+  changePassword,
   getDashboardStats,
   getSettings,
   updateSettings
