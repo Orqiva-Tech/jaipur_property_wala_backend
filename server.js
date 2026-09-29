@@ -8,8 +8,30 @@ require('dotenv').config();
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB & ensure default admin exists
+const ensureDefaultAdmin = async () => {
+  try {
+    const Admin = require('./models/Admin');
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@jaipurpropertywala.in').trim().toLowerCase();
+    const adminExists = await Admin.findOne({ email: adminEmail });
+    if (!adminExists) {
+      const adminPassword = (process.env.ADMIN_PASSWORD || 'Admin@JaipurPropertyWala2026').trim();
+      await Admin.create({
+        name: 'Jaipur Property Wala Management',
+        email: adminEmail,
+        password: adminPassword,
+        role: 'superadmin'
+      });
+      console.log(`[Auto-Init] Default superadmin account ensured: ${adminEmail}`);
+    }
+  } catch (err) {
+    console.error('[Auto-Init Admin Error]:', err.message);
+  }
+};
+
+connectDB().then(() => {
+  ensureDefaultAdmin();
+});
 
 const app = express();
 
