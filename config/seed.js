@@ -33,9 +33,21 @@ const seedDatabase = async () => {
     await Settings.create({
       companyName: 'JAIPUR PROPERTY WALA',
       tagline: 'Premier JDA & RERA Approved Residential & Commercial Plots across Jaipur, Ajmer, Kishangarh & Mumbai',
-      phone: '9251217568',
-      alternatePhone: '+91 92512 17568',
-      whatsapp: '919251217568',
+      phone: '',
+      alternatePhone: '',
+      whatsapp: '',
+      hero: {
+        mediaType: 'images',
+        images: [
+          'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=85',
+          'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=2000&q=85',
+          'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=2000&q=85'
+        ],
+        videoUrl: '',
+        badge: '100% JDA & RERA Approved Residential & Commercial Plots',
+        title: 'Discover Verified JDA Approved Plots in Jaipur',
+        subtitle: 'Buy residential and commercial plots starting from ₹15 Lakhs with spot registry and 80% pre-approved bank loans. Prime schemes in Jagatpura, Mahindra SEZ, Tonk Road & Ajmer Expressway.'
+      },
       email: 'info@jaipurpropertywala.in',
       address: 'Livasha Flat No.301, Mahal Yojna, Mahal Road Scheme, Jagatpura, Jaipur - 302017, Rajasthan',
       officeTimings: 'Monday - Sunday: 9:00 AM - 8:00 PM',

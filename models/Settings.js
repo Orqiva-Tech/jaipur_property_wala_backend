@@ -15,15 +15,46 @@ const SettingsSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    default: '9251217568'
+    default: ''
   },
   alternatePhone: {
     type: String,
-    default: '+91 92512 17568'
+    default: ''
   },
   whatsapp: {
     type: String,
-    default: '919251217568'
+    default: ''
+  },
+  hero: {
+    mediaType: {
+      type: String,
+      enum: ['images', 'video'],
+      default: 'images'
+    },
+    images: {
+      type: [String],
+      default: [
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=85',
+        'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=2000&q=85',
+        'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=2000&q=85'
+      ]
+    },
+    videoUrl: {
+      type: String,
+      default: ''
+    },
+    badge: {
+      type: String,
+      default: '100% JDA & RERA Approved Residential & Commercial Plots'
+    },
+    title: {
+      type: String,
+      default: 'Discover Verified JDA Approved Plots in Jaipur'
+    },
+    subtitle: {
+      type: String,
+      default: 'Buy residential and commercial plots starting from ₹15 Lakhs with spot registry and 80% pre-approved bank loans. Prime schemes in Jagatpura, Mahindra SEZ, Tonk Road & Ajmer Expressway.'
+    }
   },
   email: {
     type: String,

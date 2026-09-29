@@ -344,12 +344,12 @@ const sendCustomerEnquiryConfirmation = async (enquiry) => {
               </ul>
 
               <p style="font-size: 14px; margin-bottom: 5px;">
-                Agar aapko turant jankari chahiye, toh aap humare official helpline number par seedhe call ya WhatsApp kar sakte hain:
+                Agar aapko turant jankari chahiye, toh aap humari website par visit kar sakte hain ya email par sampark kar sakte hain.
               </p>
 
               <div style="text-align: center; margin: 25px 0;">
-                <a href="tel:+919251217568" class="btn">
-                  📞 Call Us: +91 92512 17568
+                <a href="https://jaipurpropertywala.in" class="btn">
+                  🌐 Visit Website
                 </a>
               </div>
 
@@ -361,7 +361,7 @@ const sendCustomerEnquiryConfirmation = async (enquiry) => {
 
             <div class="footer">
               <strong>Jaipur Property Wala Head Office:</strong> Plot No. 42, Jagatpura, Near Mahal Road, Jaipur, Rajasthan 302017<br/>
-              Helpline: +91 92512 17568 | Email: ankityadav941318@gmail.com | Website: jaipurpropertywala.in
+              Email: info@jaipurpropertywala.in | Website: jaipurpropertywala.in
             </div>
           </div>
         </body>

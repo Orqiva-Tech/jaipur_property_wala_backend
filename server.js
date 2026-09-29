@@ -119,7 +119,7 @@ app.get('/api/test-email', async (req, res) => {
     const creds = getSmtpCredentials ? getSmtpCredentials() : {};
     const testResult = await sendAdminEnquiryNotification({
       name: 'Diagnostic Verification',
-      phone: '+919251217568',
+      phone: '+910000000000',
       email: 'admin@jaipurpropertywala.in',
       interestedProperty: 'Render Live Email Diagnostic Test',
       preferredLocation: 'Jaipur',
