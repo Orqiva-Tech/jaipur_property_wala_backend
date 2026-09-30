@@ -22,7 +22,7 @@ const getProperties = async (req, res, next) => {
       jdaApproved,
       sort,
       page = 1,
-      limit = 20
+      limit = 1000
     } = req.query;
 
     const query = {};
@@ -84,21 +84,27 @@ const getProperties = async (req, res, next) => {
     if (sort === 'price-high') sortOption = { price: -1 };
     if (sort === 'featured') sortOption = { featured: -1, createdAt: -1 };
 
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const skip = (pageNum - 1) * limitNum;
+    const pageNum = parseInt(page, 10) || 1;
+    const isUncapped = limit === 'all' || limit === '0' || limit === '-1';
+    const limitNum = isUncapped ? 0 : (parseInt(limit, 10) || 1000);
+    const skip = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
 
     const total = await Property.countDocuments(query);
-    const properties = await Property.find(query)
+    const queryBuilder = Property.find(query)
       .sort(sortOption)
-      .skip(skip)
-      .limit(limitNum);
+      .skip(skip);
+
+    if (limitNum > 0) {
+      queryBuilder.limit(limitNum);
+    }
+
+    const properties = await queryBuilder;
 
     res.status(200).json({
       success: true,
       count: properties.length,
       total,
-      totalPages: Math.ceil(total / limitNum),
+      totalPages: limitNum > 0 ? Math.ceil(total / limitNum) : 1,
       currentPage: pageNum,
       data: properties
     });
