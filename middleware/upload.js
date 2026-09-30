@@ -72,7 +72,7 @@ const resumeFilter = (req, file, cb) => {
 const uploadMedia = multer({
   storage: mediaStorage,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB
+    fileSize: 500 * 1024 * 1024, // 500MB
     files: 100 // Unlimited / high batch upload
   },
   fileFilter: mediaFilter

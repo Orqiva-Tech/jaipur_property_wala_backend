@@ -25,8 +25,10 @@ router.post('/upload', protectAdmin, uploadMedia.single('file'), async (req, res
   }
 
   try {
-    if (isCloudinaryConfigured()) {
-      const isVideo = req.file.mimetype.startsWith('video');
+    const isVideo = req.file.mimetype.startsWith('video');
+    // Cloudinary Free tier strictly enforces a 100MB maximum limit on video files.
+    // If a video is > 80MB, serve it directly from local static storage /uploads/properties/
+    if (isCloudinaryConfigured() && (!isVideo || req.file.size < 80 * 1024 * 1024)) {
       const cloudRes = await uploadToCloudinary(
         req.file.path,
         'jaipur_property_wala/properties',
