@@ -138,13 +138,19 @@ const getSettings = async (req, res, next) => {
 // @access  Protected (Admin)
 const updateSettings = async (req, res, next) => {
   try {
+    const payload = { ...req.body };
+    delete payload._id;
+    delete payload.__v;
+    delete payload.createdAt;
+    delete payload.updatedAt;
+
     let settings = await Settings.findOne();
     if (!settings) {
-      settings = await Settings.create(req.body);
+      settings = await Settings.create(payload);
     } else {
-      settings = await Settings.findByIdAndUpdate(settings._id, req.body, {
+      settings = await Settings.findByIdAndUpdate(settings._id, { $set: payload }, {
         new: true,
-        runValidators: true
+        runValidators: false
       });
     }
 
