@@ -224,6 +224,13 @@ const sanitizePropertyData = async (rawData, files = []) => {
     data.type = String(data.type).trim();
   }
 
+  // Sanitize description
+  if (!data.description || String(data.description).trim() === '') {
+    data.description = data.tagline || `${data.title || 'Verified JDA Approved Plot'} located in prime area of Jaipur. Clean title, spot registry, and complete bank loan assistance.`;
+  } else {
+    data.description = String(data.description).trim();
+  }
+
   // Sanitize numeric fields - completely optional
   if (data.price !== undefined && data.price !== '' && data.price !== null) {
     data.price = Number(data.price) || 0;

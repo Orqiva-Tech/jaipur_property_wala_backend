@@ -18,7 +18,7 @@ const PropertySchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'Property description is required']
+    default: 'Prime JDA Approved property in Jaipur with clear title, spot registry, and complete bank loan assistance.'
   },
   category: {
     type: String,
