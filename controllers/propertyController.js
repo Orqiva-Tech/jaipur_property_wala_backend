@@ -338,7 +338,7 @@ const sanitizePropertyData = async (rawData, files = []) => {
         )
           .then(res => res.url)
           .catch(err => {
-            console.error('[Cloudinary direct upload error]', err.message);
+            console.warn('[Cloudinary direct upload warning]', err.message);
             return `/uploads/properties/${file.filename}`;
           });
       });
@@ -373,7 +373,7 @@ const createProperty = async (req, res, next) => {
       data: property
     });
   } catch (error) {
-    console.error('[createProperty Error]', error);
+    console.warn('[createProperty Warning]', error.message);
     res.status(400).json({
       success: false,
       message: error.message || 'Error saving property'
@@ -417,7 +417,7 @@ const updateProperty = async (req, res, next) => {
       data: property
     });
   } catch (error) {
-    console.error('[updateProperty Error]', error);
+    console.warn('[updateProperty Warning]', error.message);
     res.status(400).json({
       success: false,
       message: error.message || 'Error updating property'

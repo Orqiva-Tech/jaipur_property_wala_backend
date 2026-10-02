@@ -42,7 +42,7 @@ router.post('/upload', protectAdmin, uploadMedia.single('file'), async (req, res
       });
     }
   } catch (cloudErr) {
-    console.error('[Cloudinary upload failed, falling back to local path]', cloudErr.message);
+    console.warn('[Cloudinary upload warning, falling back to local path]', cloudErr.message);
   }
 
   const fileUrl = `/uploads/properties/${req.file.filename}`;
@@ -61,7 +61,7 @@ router.post('/upload-multiple', protectAdmin, uploadMedia.array('files'), async 
   try {
     if (isCloudinaryConfigured()) {
       const uploadPromises = req.files.map(file => {
-        const isVideo = file.mimetype.startsWith('video');
+        const isVideo = file.mimetype && file.mimetype.startsWith('video');
         return uploadToCloudinary(
           file.path,
           'jaipur_property_wala/properties',
@@ -69,7 +69,7 @@ router.post('/upload-multiple', protectAdmin, uploadMedia.array('files'), async 
         )
           .then(res => res.url)
           .catch(err => {
-            console.error('[Cloudinary single file upload error]', err.message);
+            console.warn('[Cloudinary single file upload warning]', err.message);
             return `/uploads/properties/${file.filename}`;
           });
       });
@@ -81,7 +81,7 @@ router.post('/upload-multiple', protectAdmin, uploadMedia.array('files'), async 
       });
     }
   } catch (cloudErr) {
-    console.error('[Cloudinary multi-upload failed, falling back to local path]', cloudErr.message);
+    console.warn('[Cloudinary multi-upload warning, falling back to local path]', cloudErr.message);
   }
 
   const urls = req.files.map(f => `/uploads/properties/${f.filename}`);

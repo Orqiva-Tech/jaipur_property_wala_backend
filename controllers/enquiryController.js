@@ -52,16 +52,16 @@ const createEnquiry = async (req, res, next) => {
     try {
       const emailRes = await sendAdminEnquiryNotification(enquiry);
       if (!emailRes.success) {
-        console.error('[Email Warning] Admin notification could not be delivered:', emailRes.error);
+        console.warn('[Email Warning] Admin notification could not be delivered:', emailRes.error);
       }
     } catch (emailErr) {
-      console.error('[Email Error] Exception while sending admin enquiry email:', emailErr.message);
+      console.warn('[Email Warning] Exception while sending admin enquiry email:', emailErr.message);
     }
 
     // Customer confirmation can be sent in background
     if (enquiry.email) {
       sendCustomerEnquiryConfirmation(enquiry).catch(err => {
-        console.error('[Email Warning] Customer confirmation email failed:', err.message);
+        console.warn('[Email Warning] Customer confirmation email failed:', err.message);
       });
     }
 

@@ -2,23 +2,25 @@ const nodemailer = require('nodemailer');
 
 // Helper to resolve validated SMTP credentials with safe fallbacks
 const getSmtpCredentials = () => {
-  let user = process.env.SMTP_USER;
-  if (!user || user.includes('your_email') || !user.includes('@')) {
-    user = 'ankityadav941318@gmail.com';
-  }
-
+  let user = process.env.SMTP_USER ? process.env.SMTP_USER.trim() : '';
   let rawPass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '';
-  let pass = rawPass;
-  if (!pass || pass.includes('your_app_password') || pass.length < 8) {
-    pass = 'dzwcjmthmtxwniwq';
+  let adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL ? process.env.ADMIN_NOTIFICATION_EMAIL.trim() : '';
+
+  const hasValidUser = user && user.includes('@') && !user.includes('your_email');
+  const hasValidPass = rawPass && rawPass.length >= 8 && !rawPass.includes('your_app_password');
+
+  // If user or pass from env is invalid (e.g. SMTP_USER has no @ or is just domain name),
+  // use the verified fallback pair together so we NEVER mix an unmatched user and pass!
+  if (!hasValidUser || !hasValidPass) {
+    user = 'ankityadav941318@gmail.com';
+    rawPass = 'dzwcjmthmtxwniwq';
   }
 
-  let adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
-  if (!adminEmail || adminEmail.includes('your_email') || !adminEmail.includes('@') || adminEmail.includes('example.com')) {
-    adminEmail = 'ankityadav941318@gmail.com';
+  if (!adminEmail || !adminEmail.includes('@') || adminEmail.includes('your_email') || adminEmail.includes('example.com')) {
+    adminEmail = user;
   }
 
-  return { user, pass, adminEmail };
+  return { user, pass: rawPass, adminEmail };
 };
 
 // Initialize Gmail SMTP Transporter with SSL
@@ -153,7 +155,7 @@ const sendAdminEnquiryNotification = async (enquiry) => {
     console.log(`[EmailService] Admin notification sent successfully: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('[EmailService] Error sending admin notification email:', error.message);
+    console.warn('[Email Warning] Could not send admin notification email:', error.message);
     return { success: false, error: error.message };
   }
 };
@@ -265,7 +267,7 @@ const sendAdminJobNotification = async (application) => {
     console.log(`[EmailService] Admin job application notification sent: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('[EmailService] Error sending job application email:', error.message);
+    console.warn('[Email Warning] Job application email could not be delivered:', error.message);
     return { success: false, error: error.message };
   }
 };
@@ -279,10 +281,11 @@ const sendCustomerEnquiryConfirmation = async (enquiry) => {
   }
 
   try {
+    const { user } = getSmtpCredentials();
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: `"Jaipur Property Wala" <${process.env.SMTP_USER || 'ankityadav941318@gmail.com'}>`,
+      from: `"Jaipur Property Wala" <${user}>`,
       to: enquiry.email,
       subject: `✨ Namaste ${enquiry.name} — Aapki Property Enquiry Safaltapoorvak Prapt Hui (Jaipur Property Wala)`,
       html: `
@@ -373,7 +376,7 @@ const sendCustomerEnquiryConfirmation = async (enquiry) => {
     console.log(`[EmailService] Customer confirmation sent successfully to ${enquiry.email}: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error(`[EmailService] Error sending customer confirmation email to ${enquiry.email}:`, error.message);
+    console.warn(`[Email Warning] Customer confirmation could not be delivered to ${enquiry.email}:`, error.message);
     return { success: false, error: error.message };
   }
 };

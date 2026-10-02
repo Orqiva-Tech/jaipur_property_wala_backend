@@ -33,7 +33,7 @@ const PropertySchema = new mongoose.Schema({
   location: {
     area: {
       type: String,
-      required: [true, 'Area / Location is required'],
+      default: 'Jaipur',
       trim: true
     },
     city: {

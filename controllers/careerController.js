@@ -79,10 +79,10 @@ const createJobApplication = async (req, res, next) => {
     try {
       const emailRes = await sendAdminJobNotification(application);
       if (!emailRes.success) {
-        console.error('[Email Warning] Admin job application email failed:', emailRes.error);
+        console.warn('[Email Warning] Admin job application email failed:', emailRes.error);
       }
     } catch (emailErr) {
-      console.error('[Email Error] Exception sending admin job application email:', emailErr.message);
+      console.warn('[Email Warning] Exception sending admin job application email:', emailErr.message);
     }
 
     res.status(201).json({
