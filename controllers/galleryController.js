@@ -1,7 +1,6 @@
 const Gallery = require('../models/Gallery');
 const {
-  isCloudinaryConfigured,
-  uploadToCloudinary,
+  uploadMediaFile,
   deleteFromCloudinary
 } = require('../config/cloudinary');
 
@@ -45,14 +44,14 @@ const createGalleryItem = async (req, res, next) => {
       data.mediaType = isVideo ? 'video' : 'image';
 
       try {
-        const cloudRes = await uploadToCloudinary(
-          req.file.path,
+        const cloudRes = await uploadMediaFile(
+          req.file,
           'jaipur_property_wala/gallery',
           isVideo ? 'video' : 'image'
         );
         data.mediaUrl = cloudRes.url;
       } catch (cloudErr) {
-        console.error('[Cloudinary gallery upload error]', cloudErr);
+        console.warn('[Cloudinary gallery upload warning]', cloudErr.message);
         return res.status(500).json({
           success: false,
           message: `Cloudinary upload failed: ${cloudErr.message}`

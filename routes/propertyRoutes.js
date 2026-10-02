@@ -11,7 +11,7 @@ const {
 const { protectAdmin } = require('../middleware/auth');
 const { uploadMedia } = require('../middleware/upload');
 
-const { isCloudinaryConfigured, uploadToCloudinary } = require('../config/cloudinary');
+const { isCloudinaryConfigured, uploadMediaFile } = require('../config/cloudinary');
 
 // Public routes
 router.get('/', getProperties);
@@ -25,12 +25,12 @@ router.post('/upload', protectAdmin, uploadMedia.single('file'), async (req, res
   }
 
   try {
-    const isVideo = req.file.mimetype.startsWith('video');
+    const isVideo = req.file.mimetype && req.file.mimetype.startsWith('video');
     // Cloudinary Free tier strictly enforces a 100MB maximum limit on video files.
     // If a video is > 80MB, serve it directly from local static storage /uploads/properties/
     if (isCloudinaryConfigured() && (!isVideo || req.file.size < 80 * 1024 * 1024)) {
-      const cloudRes = await uploadToCloudinary(
-        req.file.path,
+      const cloudRes = await uploadMediaFile(
+        req.file,
         'jaipur_property_wala/properties',
         isVideo ? 'video' : 'image'
       );
@@ -38,19 +38,20 @@ router.post('/upload', protectAdmin, uploadMedia.single('file'), async (req, res
         success: true,
         url: cloudRes.url,
         public_id: cloudRes.public_id,
-        filename: req.file.filename
+        filename: req.file.filename || req.file.originalname
       });
     }
   } catch (cloudErr) {
     console.warn('[Cloudinary upload warning, falling back to local path]', cloudErr.message);
   }
 
-  const fileUrl = `/uploads/properties/${req.file.filename}`;
-  res.status(200).json({
-    success: true,
-    url: fileUrl,
-    filename: req.file.filename
-  });
+  // Fallback: serve from local static if file was written to disk
+  if (req.file.path && req.file.filename) {
+    const fileUrl = `/uploads/properties/${req.file.filename}`;
+    return res.status(200).json({ success: true, url: fileUrl, filename: req.file.filename });
+  }
+
+  return res.status(500).json({ success: false, message: 'Upload failed — no storage available.' });
 });
 
 router.post('/upload-multiple', protectAdmin, uploadMedia.array('files'), async (req, res) => {
@@ -62,18 +63,18 @@ router.post('/upload-multiple', protectAdmin, uploadMedia.array('files'), async 
     if (isCloudinaryConfigured()) {
       const uploadPromises = req.files.map(file => {
         const isVideo = file.mimetype && file.mimetype.startsWith('video');
-        return uploadToCloudinary(
-          file.path,
+        return uploadMediaFile(
+          file,
           'jaipur_property_wala/properties',
           isVideo ? 'video' : 'image'
         )
           .then(res => res.url)
           .catch(err => {
             console.warn('[Cloudinary single file upload warning]', err.message);
-            return `/uploads/properties/${file.filename}`;
+            return file.path ? `/uploads/properties/${file.filename}` : null;
           });
       });
-      const urls = await Promise.all(uploadPromises);
+      const urls = (await Promise.all(uploadPromises)).filter(Boolean);
       return res.status(200).json({
         success: true,
         urls,
@@ -84,7 +85,7 @@ router.post('/upload-multiple', protectAdmin, uploadMedia.array('files'), async 
     console.warn('[Cloudinary multi-upload warning, falling back to local path]', cloudErr.message);
   }
 
-  const urls = req.files.map(f => `/uploads/properties/${f.filename}`);
+  const urls = req.files.filter(f => f.path && f.filename).map(f => `/uploads/properties/${f.filename}`);
   res.status(200).json({
     success: true,
     urls,

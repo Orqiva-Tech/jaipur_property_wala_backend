@@ -1,7 +1,7 @@
 const Property = require('../models/Property');
 const {
   isCloudinaryConfigured,
-  uploadToCloudinary,
+  uploadMediaFile,
   deleteFromCloudinary
 } = require('../config/cloudinary');
 
@@ -331,21 +331,21 @@ const sanitizePropertyData = async (rawData, files = []) => {
     if (isCloudinaryConfigured()) {
       const uploadPromises = files.map(file => {
         const isVideo = file.mimetype && file.mimetype.startsWith('video');
-        return uploadToCloudinary(
-          file.path,
+        return uploadMediaFile(
+          file,
           'jaipur_property_wala/properties',
           isVideo ? 'video' : 'image'
         )
           .then(res => res.url)
           .catch(err => {
             console.warn('[Cloudinary direct upload warning]', err.message);
-            return `/uploads/properties/${file.filename}`;
+            return file.path ? `/uploads/properties/${file.filename}` : null;
           });
       });
       const cloudUrls = await Promise.all(uploadPromises);
-      currentImages = [...currentImages, ...cloudUrls];
+      currentImages = [...currentImages, ...cloudUrls.filter(Boolean)];
     } else {
-      const filePaths = files.map(file => `/uploads/properties/${file.filename}`);
+      const filePaths = files.filter(f => f.path).map(file => `/uploads/properties/${file.filename}`);
       currentImages = [...currentImages, ...filePaths];
     }
   }

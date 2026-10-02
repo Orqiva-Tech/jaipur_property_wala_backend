@@ -1,5 +1,6 @@
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
+const path = require('path');
 
 // Configure Cloudinary from environment variables
 const configureCloudinary = () => {
@@ -84,6 +85,65 @@ const uploadToCloudinary = async (filePath, folder = 'jaipur_property_wala/prope
 };
 
 /**
+ * Upload an in-memory Buffer directly to Cloudinary (zero local disk storage!)
+ * @param {Buffer} buffer - File buffer from multer memoryStorage
+ * @param {string} folder - Target Cloudinary folder
+ * @param {string} resourceType - 'auto', 'image', 'video', or 'raw'
+ * @param {string} originalname - Optional original filename for naming
+ * @returns {Promise<{url: string, public_id: string, format: string, resource_type: string}>}
+ */
+const uploadBufferToCloudinary = (buffer, folder = 'jaipur_property_wala/properties', resourceType = 'auto', originalname = '') => {
+  return new Promise((resolve, reject) => {
+    const options = {
+      folder,
+      resource_type: resourceType,
+      timeout: 600000
+    };
+
+    if (originalname) {
+      const ext = path.extname(originalname);
+      const nameWithoutExt = path.basename(originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+      options.public_id = `${nameWithoutExt}-${Date.now()}`;
+    }
+
+    const uploadStream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) {
+        console.error('[Cloudinary Buffer Stream Error]', error);
+        return reject(error);
+      }
+      resolve({
+        url: result.secure_url,
+        public_id: result.public_id,
+        format: result.format,
+        resource_type: result.resource_type
+      });
+    });
+
+    uploadStream.end(buffer);
+  });
+};
+
+/**
+ * Universal upload helper for Multer files (supports both in-memory buffer and legacy disk path)
+ * @param {Object} file - Multer file object
+ * @param {string} folder - Cloudinary folder
+ * @param {string} resourceType - 'auto', 'image', 'video', or 'raw'
+ */
+const uploadMediaFile = async (file, folder = 'jaipur_property_wala/properties', resourceType = 'auto') => {
+  if (!file) throw new Error('No file provided for Cloudinary upload');
+
+  if (file.buffer) {
+    return uploadBufferToCloudinary(file.buffer, folder, resourceType, file.originalname);
+  }
+
+  if (file.path) {
+    return uploadToCloudinary(file.path, folder, resourceType);
+  }
+
+  throw new Error('File does not contain buffer or path');
+};
+
+/**
  * Delete an asset from Cloudinary by public ID or URL
  * @param {string} publicIdOrUrl
  * @param {string} resourceType
@@ -120,5 +180,7 @@ module.exports = {
   cloudinary,
   isCloudinaryConfigured,
   uploadToCloudinary,
+  uploadBufferToCloudinary,
+  uploadMediaFile,
   deleteFromCloudinary
 };
