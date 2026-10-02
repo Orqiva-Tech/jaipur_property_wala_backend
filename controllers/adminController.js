@@ -115,6 +115,31 @@ const getDashboardStats = async (req, res, next) => {
   }
 };
 
+const defaultAboutSection = {
+  badge: 'About Our Company',
+  title: 'Why Choose Jaipur Property Wala?',
+  description: 'Jaipur Property Wala (Jaipur JDA Plots Colonizers & Developers) has established an unmatched benchmark of credibility across Rajasthan. We protect your hard-earned investment by offering only clear-title, JDA-approved schemes with direct spot registry and zero hidden charges.',
+  image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1000&q=80',
+  imageTag: 'Authentic Jaipur Roots',
+  imageQuote: '“Estate brings together all the essentials of modern living with features that ensure comfort, safety, and lasting value.”',
+  experienceYears: '20+ Years',
+  experienceText: 'Pioneering Safe JDA Land Ownership in Jaipur',
+  points: [
+    {
+      title: 'Guaranteed Capital Appreciation:',
+      description: 'Planned JDA sectors in Jagatpura, SEZ, and Tonk Road have consistently generated high capital gains.'
+    },
+    {
+      title: 'Total Construction Flexibility:',
+      description: 'Construct your custom dream villa immediately, lease commercial spaces, or hold the clear-title plot for your family.'
+    },
+    {
+      title: '100% Security & 80% Bank Loan:',
+      description: 'All properties feature complete 90-A revenue conversion with instant loans supported by SBI, HDFC, and ICICI.'
+    }
+  ]
+};
+
 // @desc    Get website settings (public or admin)
 // @route   GET /api/settings
 // @access  Public
@@ -124,9 +149,21 @@ const getSettings = async (req, res, next) => {
     if (!settings) {
       settings = await Settings.create({});
     }
+
+    const settingsObj = settings.toObject();
+    if (!settingsObj.aboutSection || !settingsObj.aboutSection.points || settingsObj.aboutSection.points.length === 0) {
+      settingsObj.aboutSection = {
+        ...defaultAboutSection,
+        ...(settingsObj.aboutSection || {})
+      };
+      if (!settingsObj.aboutSection.points || settingsObj.aboutSection.points.length === 0) {
+        settingsObj.aboutSection.points = defaultAboutSection.points;
+      }
+    }
+
     res.status(200).json({
       success: true,
-      data: settings
+      data: settingsObj
     });
   } catch (error) {
     next(error);

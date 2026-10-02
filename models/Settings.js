@@ -56,6 +56,60 @@ const SettingsSchema = new mongoose.Schema({
       default: 'Buy residential and commercial plots starting from ₹15 Lakhs with spot registry and 80% pre-approved bank loans. Prime schemes in Jagatpura, Mahindra SEZ, Tonk Road & Ajmer Expressway.'
     }
   },
+  aboutSection: {
+    badge: {
+      type: String,
+      default: 'About Our Company'
+    },
+    title: {
+      type: String,
+      default: 'Why Choose Jaipur Property Wala?'
+    },
+    description: {
+      type: String,
+      default: 'Jaipur Property Wala (Jaipur JDA Plots Colonizers & Developers) has established an unmatched benchmark of credibility across Rajasthan. We protect your hard-earned investment by offering only clear-title, JDA-approved schemes with direct spot registry and zero hidden charges.'
+    },
+    image: {
+      type: String,
+      default: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1000&q=80'
+    },
+    imageTag: {
+      type: String,
+      default: 'Authentic Jaipur Roots'
+    },
+    imageQuote: {
+      type: String,
+      default: '“Estate brings together all the essentials of modern living with features that ensure comfort, safety, and lasting value.”'
+    },
+    experienceYears: {
+      type: String,
+      default: '20+ Years'
+    },
+    experienceText: {
+      type: String,
+      default: 'Pioneering Safe JDA Land Ownership in Jaipur'
+    },
+    points: {
+      type: [{
+        title: { type: String, default: '' },
+        description: { type: String, default: '' }
+      }],
+      default: [
+        {
+          title: 'Guaranteed Capital Appreciation:',
+          description: 'Planned JDA sectors in Jagatpura, SEZ, and Tonk Road have consistently generated high capital gains.'
+        },
+        {
+          title: 'Total Construction Flexibility:',
+          description: 'Construct your custom dream villa immediately, lease commercial spaces, or hold the clear-title plot for your family.'
+        },
+        {
+          title: '100% Security & 80% Bank Loan:',
+          description: 'All properties feature complete 90-A revenue conversion with instant loans supported by SBI, HDFC, and ICICI.'
+        }
+      ]
+    }
+  },
   email: {
     type: String,
     default: 'info@jaipurpropertywala.in'
