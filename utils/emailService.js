@@ -1,22 +1,28 @@
 const nodemailer = require('nodemailer');
 
+const VERIFIED_FALLBACK_USER = 'ankityadav941318@gmail.com';
+const VERIFIED_FALLBACK_PASS = 'dzwcjmthmtxwniwq';
+
+// Blacklist known revoked/bad passwords and place-holders
+const BLACKLISTED_PASSWORDS = ['wfzrmtvmlmgkvgnu', 'your_app_password', 'your_password'];
+
 // Helper to resolve validated SMTP credentials with safe fallbacks
 const getSmtpCredentials = () => {
   let user = process.env.SMTP_USER ? process.env.SMTP_USER.trim() : '';
   let rawPass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '';
   let adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL ? process.env.ADMIN_NOTIFICATION_EMAIL.trim() : '';
 
-  const hasValidUser = user && user.includes('@') && !user.includes('your_email');
-  const hasValidPass = rawPass && rawPass.length >= 8 && !rawPass.includes('your_app_password');
+  const hasValidUser = user && user.includes('@') && !user.includes('your_email') && user !== 'jaipurpropertywala.in';
+  const hasValidPass = rawPass && rawPass.length >= 8 && !BLACKLISTED_PASSWORDS.includes(rawPass);
 
-  // If user or pass from env is invalid (e.g. SMTP_USER has no @ or is just domain name),
+  // If user or pass from env is invalid (e.g. SMTP_USER has no @ or bad pass),
   // use the verified fallback pair together so we NEVER mix an unmatched user and pass!
   if (!hasValidUser || !hasValidPass) {
-    user = 'ankityadav941318@gmail.com';
-    rawPass = 'dzwcjmthmtxwniwq';
+    user = VERIFIED_FALLBACK_USER;
+    rawPass = VERIFIED_FALLBACK_PASS;
   }
 
-  if (!adminEmail || !adminEmail.includes('@') || adminEmail.includes('your_email') || adminEmail.includes('example.com')) {
+  if (!adminEmail || !adminEmail.includes('@') || adminEmail.includes('your_email') || adminEmail.includes('example.com') || adminEmail === 'jaipurpropertywala.in') {
     adminEmail = user;
   }
 
@@ -24,7 +30,7 @@ const getSmtpCredentials = () => {
 };
 
 // Initialize Gmail SMTP Transporter with SSL
-const createTransporter = () => {
+const createTransporter = (customUser, customPass) => {
   const { user, pass } = getSmtpCredentials();
 
   return nodemailer.createTransport({
@@ -32,8 +38,8 @@ const createTransporter = () => {
     port: 465,
     secure: true,
     auth: {
-      user,
-      pass
+      user: customUser || user,
+      pass: customPass || pass
     },
     tls: {
       rejectUnauthorized: false
@@ -42,11 +48,44 @@ const createTransporter = () => {
 };
 
 /**
+ * Send email safely. If primary credentials throw 535 or BadCredentials,
+ * automatically falls back to verified backup credentials and retries.
+ */
+const safeSendMail = async (mailOptions) => {
+  try {
+    const transporter = createTransporter();
+    const info = await transporter.sendMail(mailOptions);
+    return { success: true, messageId: info.messageId };
+  } catch (primaryErr) {
+    const errMsg = primaryErr.message || '';
+    const isAuthErr = errMsg.includes('535') || errMsg.includes('BadCredentials') || errMsg.includes('Username and Password not accepted');
+
+    if (isAuthErr) {
+      try {
+        const fallbackTransporter = createTransporter(VERIFIED_FALLBACK_USER, VERIFIED_FALLBACK_PASS);
+        const fallbackOptions = {
+          ...mailOptions,
+          from: (mailOptions.from || '').replace(/<.*?>/, `<${VERIFIED_FALLBACK_USER}>`)
+        };
+        const info = await fallbackTransporter.sendMail(fallbackOptions);
+        console.log(`[EmailService] Sent successfully via verified fallback SMTP: ${info.messageId}`);
+        return { success: true, messageId: info.messageId };
+      } catch (fallbackErr) {
+        console.warn('[Email Warning] Fallback delivery failed:', fallbackErr.message);
+        return { success: false, error: fallbackErr.message };
+      }
+    }
+
+    console.warn('[Email Warning] Could not deliver email:', primaryErr.message);
+    return { success: false, error: primaryErr.message };
+  }
+};
+
+/**
  * Send notification email to the Admin regarding a new customer enquiry
  */
 const sendAdminEnquiryNotification = async (enquiry) => {
   try {
-    const transporter = createTransporter();
     const { user, adminEmail } = getSmtpCredentials();
     const dateFormatted = new Date().toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
@@ -151,9 +190,7 @@ const sendAdminEnquiryNotification = async (enquiry) => {
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`[EmailService] Admin notification sent successfully: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    return await safeSendMail(mailOptions);
   } catch (error) {
     console.warn('[Email Warning] Could not send admin notification email:', error.message);
     return { success: false, error: error.message };
@@ -165,7 +202,6 @@ const sendAdminEnquiryNotification = async (enquiry) => {
  */
 const sendAdminJobNotification = async (application) => {
   try {
-    const transporter = createTransporter();
     const { user, adminEmail } = getSmtpCredentials();
     const dateFormatted = new Date().toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
@@ -263,9 +299,7 @@ const sendAdminJobNotification = async (application) => {
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`[EmailService] Admin job application notification sent: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    return await safeSendMail(mailOptions);
   } catch (error) {
     console.warn('[Email Warning] Job application email could not be delivered:', error.message);
     return { success: false, error: error.message };
@@ -282,7 +316,6 @@ const sendCustomerEnquiryConfirmation = async (enquiry) => {
 
   try {
     const { user } = getSmtpCredentials();
-    const transporter = createTransporter();
 
     const mailOptions = {
       from: `"Jaipur Property Wala" <${user}>`,
@@ -372,9 +405,7 @@ const sendCustomerEnquiryConfirmation = async (enquiry) => {
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`[EmailService] Customer confirmation sent successfully to ${enquiry.email}: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    return await safeSendMail(mailOptions);
   } catch (error) {
     console.warn(`[Email Warning] Customer confirmation could not be delivered to ${enquiry.email}:`, error.message);
     return { success: false, error: error.message };
