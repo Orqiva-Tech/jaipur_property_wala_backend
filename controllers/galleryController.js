@@ -1,8 +1,11 @@
 const Gallery = require('../models/Gallery');
 const {
   uploadMediaFile,
-  deleteFromCloudinary
+  deleteFromCloudinary,
+  isCloudinaryConfigured
 } = require('../config/cloudinary');
+const path = require('path');
+const fs = require('fs');
 
 // @desc    Get gallery items with optional category & location filter
 // @route   GET /api/gallery
@@ -40,22 +43,36 @@ const createGalleryItem = async (req, res, next) => {
     const data = { ...req.body };
 
     if (req.file) {
-      const isVideo = req.file.mimetype && req.file.mimetype.startsWith('video');
+      const ext = path.extname(req.file.originalname || '').toLowerCase();
+      const isVideoExt = ['.mp4', '.mov', '.webm', '.mkv', '.avi', '.m4v', '.3gp'].includes(ext);
+      const isVideoMime = req.file.mimetype && req.file.mimetype.startsWith('video');
+      const isVideo = isVideoMime || isVideoExt || data.mediaType === 'video';
       data.mediaType = isVideo ? 'video' : 'image';
 
-      try {
-        const cloudRes = await uploadMediaFile(
-          req.file,
-          'jaipur_property_wala/gallery',
-          isVideo ? 'video' : 'image'
-        );
-        data.mediaUrl = cloudRes.url;
-      } catch (cloudErr) {
-        console.warn('[Cloudinary gallery upload warning]', cloudErr.message);
-        return res.status(500).json({
-          success: false,
-          message: `Cloudinary upload failed: ${cloudErr.message}`
-        });
+      if (isCloudinaryConfigured()) {
+        try {
+          const cloudRes = await uploadMediaFile(
+            req.file,
+            'jaipur_property_wala/gallery',
+            isVideo ? 'video' : 'image'
+          );
+          if (cloudRes && cloudRes.url) {
+            data.mediaUrl = cloudRes.url;
+          }
+        } catch (cloudErr) {
+          console.warn('[Cloudinary gallery upload warning, falling back to local file]', cloudErr.message);
+          // If local disk file exists, use local static path as fallback
+          if (req.file.path && fs.existsSync(req.file.path)) {
+            data.mediaUrl = `/uploads/gallery/${req.file.filename}`;
+          } else {
+            return res.status(500).json({
+              success: false,
+              message: `Media upload failed: ${cloudErr.message}`
+            });
+          }
+        }
+      } else {
+        data.mediaUrl = `/uploads/gallery/${req.file.filename}`;
       }
     }
 
@@ -77,20 +94,44 @@ const createGalleryItem = async (req, res, next) => {
       }
     }
 
+    // Auto-generate thumbnail URL if not provided
     if (!data.thumbnailUrl && data.mediaUrl) {
       if (data.mediaType === 'image') {
         data.thumbnailUrl = data.mediaUrl;
       } else if (data.mediaType === 'video') {
         if (data.mediaUrl.includes('res.cloudinary.com')) {
-          data.thumbnailUrl = data.mediaUrl.replace(/\.(mp4|mov|webm|mkv|m4v)$/i, '.jpg');
+          data.thumbnailUrl = data.mediaUrl.replace(/\.(mp4|mov|webm|mkv|m4v|avi|3gp)(\?.*)?$/i, '.jpg$2');
+          if (!data.thumbnailUrl.endsWith('.jpg') && !data.thumbnailUrl.includes('.jpg?')) {
+            data.thumbnailUrl = `${data.mediaUrl}.jpg`;
+          }
         } else {
           data.thumbnailUrl = 'https://res.cloudinary.com/ripzq8zx/image/upload/v1790233295/jaipur_property_wala/gallery/srttotuajh6zdgxx91yz.jpg';
         }
       }
     }
 
+    // Validate category against model enum
+    const allowedCategories = [
+      'Project Photos',
+      'Construction Progress',
+      'Completed Projects',
+      'Property Site Visits',
+      'Events',
+      'Videos'
+    ];
+    if (!data.category || !allowedCategories.includes(data.category)) {
+      data.category = data.mediaType === 'video' ? 'Videos' : 'Project Photos';
+    }
+
     if (!data.location) {
       data.location = 'Jaipur';
+    }
+
+    if (!data.title && req.file) {
+      data.title = path.basename(req.file.originalname, path.extname(req.file.originalname));
+    }
+    if (!data.title) {
+      data.title = 'Media Item';
     }
 
     const item = await Gallery.create(data);
@@ -101,6 +142,7 @@ const createGalleryItem = async (req, res, next) => {
       data: item
     });
   } catch (error) {
+    console.error('[Gallery Create Error]:', error);
     next(error);
   }
 };

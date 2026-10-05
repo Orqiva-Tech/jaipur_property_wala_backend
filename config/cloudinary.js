@@ -53,21 +53,43 @@ const uploadToCloudinary = async (filePath, folder = 'jaipur_property_wala/prope
     }
 
     const isVideo = resourceType === 'video';
-    const uploadFn = isVideo ? cloudinary.uploader.upload_large : cloudinary.uploader.upload;
-
-    const result = await uploadFn(filePath, {
+    const uploadOptions = {
       folder,
-      resource_type: resourceType,
+      resource_type: isVideo ? 'video' : resourceType,
       use_filename: true,
       unique_filename: true,
       overwrite: false,
       timeout: 600000,
       chunk_size: 6000000
-    });
+    };
+
+    let result;
+    if (isVideo) {
+      // Cloudinary v2 upload_large returns a stream unless a callback is supplied
+      try {
+        result = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_large(filePath, uploadOptions, (error, res) => {
+            if (error) return reject(error);
+            resolve(res);
+          });
+        });
+      } catch (largeErr) {
+        console.warn('[Cloudinary upload_large fallback to standard upload]', largeErr.message);
+        result = await cloudinary.uploader.upload(filePath, uploadOptions);
+      }
+    } else {
+      result = await cloudinary.uploader.upload(filePath, uploadOptions);
+    }
+
+    if (!result || !result.secure_url) {
+      throw new Error('Cloudinary did not return a valid secure_url');
+    }
 
     // Clean up local temp file after successful Cloudinary upload
     try {
-      fs.unlinkSync(filePath);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     } catch (cleanupErr) {
       console.warn('[Cloudinary Cleanup Warning]', cleanupErr.message);
     }
