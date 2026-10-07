@@ -45,6 +45,7 @@ const createEnquiry = async (req, res, next) => {
       budget: budget || 'Any',
       message: message || '',
       source: source || 'Website',
+      status: req.body.status || 'New',
       ipAddress: req.ip || req.headers['x-forwarded-for']
     });
 
@@ -260,8 +261,157 @@ const deleteEnquiryNote = async (req, res, next) => {
   }
 };
 
+// @desc    Admin manually create single lead / enquiry
+// @route   POST /api/admin/enquiries/admin or POST /api/enquiries/admin
+// @access  Protected (Admin)
+const createAdminEnquiry = async (req, res, next) => {
+  try {
+    const {
+      name,
+      phone,
+      email,
+      interestedProperty,
+      propertyId,
+      preferredLocation,
+      budget,
+      message,
+      source,
+      status,
+      initialNote
+    } = req.body;
+
+    if (!name || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name and phone number are required.'
+      });
+    }
+
+    const internalNotes = [];
+    if (initialNote && String(initialNote).trim()) {
+      internalNotes.push({
+        note: String(initialNote).trim(),
+        author: req.admin?.name || 'Admin',
+        date: new Date()
+      });
+    }
+
+    const enquiry = await Enquiry.create({
+      name: String(name).trim(),
+      phone: String(phone).trim(),
+      email: email ? String(email).trim().toLowerCase() : '',
+      interestedProperty: interestedProperty ? String(interestedProperty).trim() : 'General Consultation',
+      propertyId: propertyId || undefined,
+      preferredLocation: preferredLocation ? String(preferredLocation).trim() : 'Jaipur',
+      budget: budget ? String(budget).trim() : 'Any',
+      message: message ? String(message).trim() : '',
+      source: source ? String(source).trim() : 'Admin Entry',
+      status: status || 'New',
+      internalNotes,
+      ipAddress: req.ip || req.headers['x-forwarded-for']
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Lead created successfully',
+      data: enquiry
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Bulk import leads / enquiries from CSV / JSON
+// @route   POST /api/admin/enquiries/import or POST /api/enquiries/import
+// @access  Protected (Admin)
+const importEnquiries = async (req, res, next) => {
+  try {
+    const { leads } = req.body;
+
+    if (!leads || !Array.isArray(leads) || leads.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No lead records provided for import.'
+      });
+    }
+
+    const validLeads = [];
+    const skipped = [];
+    const allowedStatuses = ['New', 'Contacted', 'Site Visit Scheduled', 'Negotiation', 'Closed', 'Archived'];
+
+    for (let i = 0; i < leads.length; i++) {
+      const item = leads[i];
+      const name = item.name || item.Name || item['Customer Name'] || item['Full Name'];
+      const phone = item.phone || item.Phone || item['Phone Number'] || item['Mobile'] || item['WhatsApp'];
+
+      if (!name || !phone || !String(name).trim() || !String(phone).trim()) {
+        skipped.push({ row: i + 1, reason: 'Missing name or phone number', data: item });
+        continue;
+      }
+
+      const email = item.email || item.Email || '';
+      const interestedProperty = item.interestedProperty || item.Property || item['Interested Scheme'] || item['Interested Property'] || 'General Consultation';
+      const preferredLocation = item.preferredLocation || item.Location || item['Preferred Location'] || item.Locality || 'Jaipur';
+      const budget = item.budget || item.Budget || 'Any';
+      const message = item.message || item.Message || item.Requirements || item.Notes || '';
+      const source = item.source || item.Source || 'CSV Import';
+      let rawStatus = item.status || item.Status || 'New';
+      if (!allowedStatuses.includes(rawStatus)) {
+        rawStatus = 'New';
+      }
+
+      const internalNotes = [];
+      const noteText = item.note || item.Note || item['Internal Note'];
+      if (noteText && String(noteText).trim()) {
+        internalNotes.push({
+          note: String(noteText).trim(),
+          author: req.admin?.name || 'Admin (Import)',
+          date: new Date()
+        });
+      }
+
+      validLeads.push({
+        name: String(name).trim(),
+        phone: String(phone).trim(),
+        email: email ? String(email).trim().toLowerCase() : '',
+        interestedProperty: String(interestedProperty).trim(),
+        preferredLocation: String(preferredLocation).trim(),
+        budget: String(budget).trim(),
+        message: String(message).trim(),
+        source: String(source).trim(),
+        status: rawStatus,
+        internalNotes,
+        ipAddress: req.ip || req.headers['x-forwarded-for']
+      });
+    }
+
+    if (validLeads.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid lead records found in the import payload. Each lead must contain at least Name and Phone.',
+        skippedCount: skipped.length,
+        skipped
+      });
+    }
+
+    const inserted = await Enquiry.insertMany(validLeads);
+
+    res.status(201).json({
+      success: true,
+      message: `Successfully imported ${inserted.length} lead${inserted.length === 1 ? '' : 's'}.`,
+      count: inserted.length,
+      skippedCount: skipped.length,
+      skipped
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createEnquiry,
+  createAdminEnquiry,
+  importEnquiries,
   getEnquiries,
   getEnquiryById,
   updateEnquiryStatus,

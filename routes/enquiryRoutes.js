@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const {
   createEnquiry,
+  createAdminEnquiry,
+  importEnquiries,
   getEnquiries,
   getEnquiryById,
   updateEnquiryStatus,
@@ -16,6 +18,8 @@ router.post('/', createEnquiry);
 
 // Admin routes
 router.get('/', protectAdmin, getEnquiries);
+router.post('/admin', protectAdmin, createAdminEnquiry);
+router.post('/import', protectAdmin, importEnquiries);
 router.get('/export', protectAdmin, exportEnquiriesCSV);
 router.get('/:id', protectAdmin, getEnquiryById);
 router.put('/:id', protectAdmin, updateEnquiryStatus);
