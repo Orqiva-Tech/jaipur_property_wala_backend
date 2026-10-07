@@ -140,12 +140,20 @@ const defaultAboutSection = {
   ]
 };
 
+const defaultTownshipShowcase = {
+  mode: 'recent',
+  selectedProperties: [],
+  badge: 'Signature Plotted Developments',
+  title: 'Ongoing & Ready-to-Build Townships',
+  subtitle: 'Explore prime projects with ready possession, underground utilities, and direct highway connectivity.'
+};
+
 // @desc    Get website settings (public or admin)
 // @route   GET /api/settings
 // @access  Public
 const getSettings = async (req, res, next) => {
   try {
-    let settings = await Settings.findOne();
+    let settings = await Settings.findOne().populate('townshipShowcase.selectedProperties');
     if (!settings) {
       settings = await Settings.create({});
     }
@@ -158,6 +166,14 @@ const getSettings = async (req, res, next) => {
       };
       if (!settingsObj.aboutSection.points || settingsObj.aboutSection.points.length === 0) {
         settingsObj.aboutSection.points = defaultAboutSection.points;
+      }
+    }
+
+    if (!settingsObj.townshipShowcase) {
+      settingsObj.townshipShowcase = { ...defaultTownshipShowcase };
+    } else {
+      if (Array.isArray(settingsObj.townshipShowcase.selectedProperties)) {
+        settingsObj.townshipShowcase.selectedProperties = settingsObj.townshipShowcase.selectedProperties.filter(Boolean);
       }
     }
 
@@ -189,6 +205,10 @@ const updateSettings = async (req, res, next) => {
         new: true,
         runValidators: false
       });
+    }
+
+    if (settings && settings.populate) {
+      await settings.populate('townshipShowcase.selectedProperties');
     }
 
     res.status(200).json({

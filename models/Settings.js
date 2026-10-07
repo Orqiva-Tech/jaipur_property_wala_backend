@@ -137,7 +137,30 @@ const SettingsSchema = new mongoose.Schema({
     instagram: { type: String, default: 'https://instagram.com/' },
     youtube: { type: String, default: 'https://youtube.com/' },
     linkedin: { type: String, default: 'https://linkedin.com/' }
+  },
+  townshipShowcase: {
+    mode: {
+      type: String,
+      enum: ['recent', 'custom'],
+      default: 'recent'
+    },
+    selectedProperties: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Property'
+    }],
+    badge: {
+      type: String,
+      default: 'Signature Plotted Developments'
+    },
+    title: {
+      type: String,
+      default: 'Ongoing & Ready-to-Build Townships'
+    },
+    subtitle: {
+      type: String,
+      default: 'Explore prime projects with ready possession, underground utilities, and direct highway connectivity.'
+    }
   }
-}, { timestamps: true });
+}, { timestamps: true, strict: false });
 
 module.exports = mongoose.model('Settings', SettingsSchema);
