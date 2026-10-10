@@ -127,7 +127,7 @@ const sendAdminEnquiryNotification = async (enquiry) => {
               <p>⚡ You Have A New Query (Real-Time Notification)</p>
             </div>
             <div class="body">
-              <p style="font-size: 15px; margin-top: 0;"><strong>Ankit ji, website par nayi customer query aayi hai:</strong></p>
+              <p style="font-size: 15px; margin-top: 0;"><strong>A new customer query has been received from the website:</strong></p>
               
               <div style="background: #f7faf8; border-radius: 10px; padding: 14px; border-left: 4px solid #d4af37; margin-bottom: 16px;">
                 <div class="field-row">
@@ -178,7 +178,7 @@ const sendAdminEnquiryNotification = async (enquiry) => {
 
               <div style="text-align: center;">
                 <a href="tel:${enquiry.phone}" class="btn">
-                  📞 Turant Customer Ko Call Karein
+                  📞 Call Customer Now
                 </a>
               </div>
             </div>
@@ -242,7 +242,7 @@ const sendAdminJobNotification = async (application) => {
               <p>💼 New Candidate Job Application</p>
             </div>
             <div class="body">
-              <p style="font-size: 15px; margin-top: 0;"><strong>Naya job candidate form submit hua hai:</strong></p>
+              <p style="font-size: 15px; margin-top: 0;"><strong>A new job candidate application has been submitted:</strong></p>
               
               <div style="background: #f8fafc; border-radius: 10px; padding: 14px; border-left: 4px solid #2563eb; margin-bottom: 16px;">
                 <div class="field-row">
