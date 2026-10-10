@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 
-const VERIFIED_FALLBACK_USER = 'ankityadav941318@gmail.com';
-const VERIFIED_FALLBACK_PASS = 'dzwcjmthmtxwniwq';
+const VERIFIED_FALLBACK_USER = process.env.SMTP_USER || 'jda226566@gmail.com';
+const VERIFIED_FALLBACK_PASS = process.env.SMTP_PASS || '';
 
 // Blacklist known revoked/bad passwords and place-holders
 const BLACKLISTED_PASSWORDS = ['wfzrmtvmlmgkvgnu', 'your_app_password', 'your_password'];
@@ -22,8 +22,9 @@ const getSmtpCredentials = () => {
     rawPass = VERIFIED_FALLBACK_PASS;
   }
 
+  const DEFAULT_ADMIN_NOTIFICATION_EMAIL = 'jda226566@gmail.com';
   if (!adminEmail || !adminEmail.includes('@') || adminEmail.includes('your_email') || adminEmail.includes('example.com') || adminEmail === 'jaipurpropertywala.in') {
-    adminEmail = user;
+    adminEmail = DEFAULT_ADMIN_NOTIFICATION_EMAIL;
   }
 
   return { user, pass: rawPass, adminEmail };
